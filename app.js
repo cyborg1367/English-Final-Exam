@@ -7,8 +7,10 @@
 const CFG=window.EXAM_CONFIG||{};
 const API=String(CFG.APPS_SCRIPT_URL||'').trim();
 const DEMO=!API;
+const PREVIEW_REQUESTED=new URLSearchParams(window.location.search).get('preview')==='1';
 const DURATION=Number(CFG.DURATION_MINUTES)||60;
-const STORAGE_KEY='english_final_exam_session_v1';
+// Keep preview and live sessions separate, so an old preview submission never blocks live enrollment.
+const STORAGE_KEY=DEMO?'english_final_exam_preview_v2':'english_final_exam_live_v2_'+Array.from(API).reduce((h,c)=>(Math.imul(31,h)+c.charCodeAt(0))>>>0,0).toString(16);
 const AUDIO_FILES={1:'assets/listening-part-1.mp3',2:'assets/listening-part-2.mp3'};
 const PARTS=[
   {id:'vocabulary',name:'Vocabulary',from:1,to:36,detail:'18 points'},
@@ -30,7 +32,8 @@ const isMain=()=>state&&state.stage==='MAIN';
 const qs=id=>examData.questions[id-1];
 const answers=()=>state.stage==='MAIN'?state.mainAnswers:state.listeningAnswers;
 const displayedPart=()=>PARTS.find(p=>currentId>=p.from&&currentId<=p.to)||PARTS[0];
-const count=(from,to)=>Array.from({length:to-from+1},(_,i)=>String(from+i)).filter(key=>String((from<=64?state.mainAnswers:state.listeningAnswers)[key]||'').trim()).length;
+const hasResponse=v=>String(v??'').split(' | ').some(piece=>piece.trim().length>0);
+const count=(from,to)=>Array.from({length:to-from+1},(_,i)=>String(from+i)).filter(key=>hasResponse((from<=64?state.mainAnswers:state.listeningAnswers)[key])).length;
 const readingPassage=(title,body)=>`<section class="passage-card"><div class="eyebrow">Source passage</div><h3>${escapeHtml(title)}</h3><div class="passage">${escapeHtml(body)}</div></section>`;
 const mmss=ms=>{const total=Math.max(0,Math.ceil(ms/1000));return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;};
 const showToast=(message,timeout=3400)=>{const n=document.getElementById('toast');n.textContent=message;n.hidden=false;const stamp=++lastToast;setTimeout(()=>{if(stamp===lastToast)n.hidden=true;},timeout);};
@@ -150,9 +153,13 @@ function advanceWindow(){
 function navGroups(){
   const allowed=state.stage==='MAIN'?PARTS.slice(0,4):PARTS.slice(4);
   return allowed.map(p=>{
+    if(p.id==='listening'){
+      return `<div class="sidebar-section"><div class="navigator-label">Listening sections</div>
+      ${[1,2].map(part=>{const lo=part===1?65:70,hi=part===1?69:74;return `<button type="button" class="listening-nav ${currentId===lo?'active':''}" data-listening-part="${part}"><span class="listening-nav-title">Part ${part} · ${part===1?'Animal facts':'Celebrations'}</span><span class="listening-nav-detail">Questions ${lo}–${hi} · <span data-listening-progress="${part}">${count(lo,hi)} / 5 answered</span></span></button>`;}).join('')}</div>`;
+    }
     const nav=Array.from({length:p.to-p.from+1},(_,i)=>{
       const id=p.from+i, val=(p.from<=64?state.mainAnswers:state.listeningAnswers)[id];
-      return `<button class="qnav ${String(val||'').trim()?'answered':''} ${id===currentId?'current':''} ${flags.has(id)?'flagged':''}" data-jump="${id}" title="Question ${id}" type="button">${id}</button>`;
+      return `<button class="qnav ${hasResponse(val)?'answered':''} ${id===currentId?'current':''} ${flags.has(id)?'flagged':''}" data-jump="${id}" title="Question ${id}" type="button">${id}</button>`;
     }).join('');
     return `<div class="sidebar-section"><div class="navigator-label">${escapeHtml(p.name)}</div><div class="question-grid">${nav}</div></div>`;
   }).join('');
@@ -166,8 +173,9 @@ function refreshNavigation(){
   const pctNode=document.getElementById('progress-pct');if(pctNode)pctNode.textContent=Math.round(100*n/total)+'%';
   document.querySelectorAll('.qnav[data-jump]').forEach(el=>{
     const id=Number(el.dataset.jump),set=(id<=64?state.mainAnswers:state.listeningAnswers);
-    el.classList.toggle('answered',!!String(set[id]||'').trim());
+    el.classList.toggle('answered',hasResponse(set[id]));
   });
+  document.querySelectorAll('[data-listening-progress]').forEach(el=>{const part=Number(el.dataset.listeningProgress);el.textContent=count(part===1?65:70,part===1?69:74)+' / 5 answered';});
   const confirmNode=document.getElementById('confirm-count');if(confirmNode)confirmNode.textContent=`${count(1,64)} / 64`;
 }
 function sidebar(){
@@ -178,6 +186,19 @@ function sidebar(){
     <div class="side-note">${isMain()?'You can change answers until the 60-minute deadline. Once locked, this stage cannot be reopened.':'Listening is untimed. Each recording may be played only twice, with no pause, replay within a play, or seeking.'}</div>
     ${isMain()?'<button type="button" class="button primary full" data-action="confirm-main">Finish timed section →</button>':'<button type="button" class="button primary full" data-action="confirm-listening">Submit final exam →</button>'}
   </aside>`;
+}
+function blankValues(value,number){
+  // Existing answers from the earlier version may be comma-separated.
+  const raw=String(value||'');
+  const parts=raw.includes(' | ')?raw.split(' | '):(raw.includes(',')?raw.split(','):raw?[raw]:[]);
+  return Array.from({length:number},(_,i)=>(parts[i]||'').trim());
+}
+function inlineBlanks(q,value){
+  const chunks=q.prompt.split(/_{4,}/g);
+  const number=chunks.length-1,values=blankValues(value,number);
+  return `<div class="answer-label">Fill in each blank separately</div><div class="inline-sentence">${chunks.map((segment,i)=>
+    escapeHtml(segment)+(i<number?`<input class="inline-blank" type="text" data-answer="${q.id}" data-blank-index="${i}" data-blank-total="${number}" aria-label="Question ${q.id}, blank ${i+1} of ${number}" autocomplete="off" spellcheck="false" placeholder="Blank ${i+1}" value="${escapeHtml(values[i])}">`:'')
+  ).join('')}</div><div class="hint-box">Write one missing word or verb form in each box.</div>`;
 }
 function answerMarkup(q){
   const value=String(answers()[q.id]||'');
@@ -192,6 +213,7 @@ function answerMarkup(q){
     const selectedElsewhere=new Set(uniqueGroup.filter(i=>i!==q.id).map(i=>String(answers()[i]||'')));
     return `<div class="answer-label">Select one answer</div><select class="answer-select" data-answer="${q.id}"><option value="">Select an option…</option>${q.options.map((v,i)=>`<option value="${escapeHtml(v)}" ${value===v?'selected':''} ${selectedElsewhere.has(v)&&value!==v?'disabled':''}>${escapeHtml(v)}</option>`).join('')}</select>`;
   }
+  if(q.kind==='text' && [50,52,54,55].includes(q.id))return inlineBlanks(q,value);
   const label=q.kind==='writing'?'Your blog post':q.kind==='textarea'?'Rewrite the complete sentence':'Your answer';
   if(q.kind==='writing'||q.kind==='textarea'){
     const countWords=value.trim()?value.trim().split(/\s+/).length:0;
@@ -236,12 +258,16 @@ function audioCard(part){
     <div class="audio-note">A play is used when you press Play, even if you refresh or close the page. No pause, resume, replay inside the recording or seeking.</div></section>`;
 }
 function listeningQuestion(){
-  const q=qs(currentId),part=q.id<=69?1:2;
-  return `<div class="workspace listening-workspace"><div class="workspace-intro"><div><div class="eyebrow">Stage 02 · Untimed exam</div><h2>Listening</h2><p>${escapeHtml(q.subsection)} · 10 points</p></div><div class="workspace-top-meta"><span class="pill green">No time limit</span><span class="pill">Q ${currentId} / 74</span></div></div>
-  <section class="listening-intro"><div><h3>Listen carefully.</h3><p class="small muted">You have two complete plays per recording. Once this stage is submitted, the exam is finished.</p></div><span class="pill gold">No pause / No seek</span></section>
-  ${audioCard(1)}${audioCard(2)}
-  <section class="question-card"><div class="question-top"><span class="eyebrow">Question ${currentId} · Audio ${part}</span><span class="pill">Manual grading</span></div>
-  <div class="question-title">${escapeHtml(q.prompt)}</div>${answerMarkup(q)}${footer()}</section></div>`;
+  const part=currentId<=69?1:2;
+  const first=part===1?65:70,last=part===1?69:74;
+  const label=part===1?'Part 1 · Animal facts':'Part 2 · Celebrations';
+  const questions=Array.from({length:5},(_,i)=>qs(first+i));
+  return `<div class="workspace listening-workspace"><div class="workspace-intro"><div><div class="eyebrow">Stage 02 · Untimed exam</div><h2>Listening · Part ${part}</h2><p>${escapeHtml(label)} · Questions ${first}–${last}</p></div><div class="workspace-top-meta"><span class="pill green">No time limit</span><span class="pill">${count(first,last)} / 5 answered</span></div></div>
+  <section class="listening-intro"><div><h3>Listen carefully.</h3><p class="small muted">All five questions for this recording are shown below. You may play the recording at most twice.</p></div><span class="pill gold">No pause / No seek</span></section>
+  ${audioCard(part)}
+  <div class="listening-questions">${questions.map(q=>`<section class="question-card listening-question" id="question-${q.id}"><div class="question-top"><span class="eyebrow">Question ${q.id}</span><span class="pill">${q.id<=69?'True / False':'Match the speaker'}</span></div><div class="question-title">${escapeHtml(q.prompt)}</div>${answerMarkup(q)}</section>`).join('')}</div>
+  <div class="listening-page-actions"><span id="save-status" class="footer-status saved">Answers saved</span><div class="nav-actions">${part===2?'<button class="button" data-action="listening-prev" type="button">← Part 1</button>':''}<button class="button primary" type="button" data-action="${part===1?'listening-next':'confirm-listening'}">${part===1?'Continue to Part 2 →':'Submit final exam →'}</button></div></div>
+  <div class="footer-line"><span>Every recording has a separate two-play limit.</span><span>Part ${part} of 2</span></div></div>`;
 }
 function entry(){
   timerNode.hidden=true;
@@ -293,8 +319,13 @@ function completed(){
   <div class="complete-stats"><div><strong>${count(1,64)} / 64</strong><span>Timed questions answered</span></div><div><strong>${count(65,74)} / 10</strong><span>Listening questions answered</span></div></div>
   <div class="hint-box" style="margin-top:22px">Exam reference: <strong>${escapeHtml(state.examId)}</strong><br>Instructor grading is completed separately in Google Sheets.</div></div>`;
 }
-function move(delta){const next=currentId+delta,lo=isMain()?1:65,hi=isMain()?64:74;if(next<lo||next>hi)return;currentId=next;render();window.scrollTo({top:0,behavior:'smooth'});}
-function choosePage(id){if(state.stage==='MAIN'&&(id<1||id>64))return;if(state.stage==='LISTENING'&&(id<65||id>74))return;currentId=id;render();window.scrollTo({top:0,behavior:'smooth'});}
+function move(delta){if(!isMain())return;const next=currentId+delta;if(next<1||next>64)return;currentId=next;render();window.scrollTo({top:0,behavior:'smooth'});}
+function choosePage(id){if(state.stage!=='MAIN'||id<1||id>64)return;currentId=id;render();window.scrollTo({top:0,behavior:'smooth'});}
+function chooseListeningPart(part){
+  if(!state||state.stage!=='LISTENING'||(part!==1&&part!==2))return;
+  if(playBusy||activeAudio!==null){showToast('The recording must finish before switching Listening pages.');return;}
+  currentId=part===1?65:70;render();window.scrollTo({top:0,behavior:'smooth'});
+}
 function showMainConfirm(){if(!isMain()||busy)return;document.getElementById('confirm-count').textContent=`${count(1,64)} / 64`;
   document.getElementById('confirm-remaining').textContent=mmss(state.deadline-clockMs());confirmDialog.showModal();}
 async function lockTimedSection(auto=false){
@@ -316,6 +347,7 @@ async function lockTimedSection(auto=false){
 }
 async function finishListening(){
   if(!state||state.stage!=='LISTENING'||busy)return;
+  if(activeAudio!==null||playBusy){showToast('Wait for the recording to finish before submitting.');return;}
   const yes=window.confirm(`Submit your final exam?\n\nYou answered ${count(65,74)} of 10 Listening questions. After submission, all answers are locked.`);
   if(!yes)return;
   clearTimeout(savingTimer);busy=true;connection('Submitting…','gold');
@@ -356,7 +388,11 @@ function setupListeners(){
   app.addEventListener('input',e=>{
     const element=e.target;if(!element.dataset.answer)return;
     const id=Number(element.dataset.answer);
-    if(element.type==='text'||element.tagName==='TEXTAREA')setAnswer(id,element.value);
+    if(element.dataset.blankIndex!==undefined){
+      const total=Number(element.dataset.blankTotal),parts=blankValues(state.mainAnswers[id],total);
+      parts[Number(element.dataset.blankIndex)]=element.value.trim();
+      setAnswer(id,parts.join(' | '));
+    }else if(element.type==='text'||element.tagName==='TEXTAREA')setAnswer(id,element.value);
     if(id===64){const n=document.querySelector('#word-count');if(n){const words=element.value.trim()?element.value.trim().split(/\s+/).length:0;n.textContent=words+' words';n.className=words>=50&&words<=80?'good':'warn';}}
   });
   app.addEventListener('change',e=>{
@@ -364,12 +400,13 @@ function setupListeners(){
     if(el.tagName==='SELECT'||el.type==='radio'){
       setAnswer(Number(el.dataset.answer),el.value);
       if(el.type==='radio'){
-        document.querySelectorAll('.option').forEach(x=>x.classList.toggle('selected',x.contains(el)&&el.checked));
+        el.closest('.question-card').querySelectorAll('.option').forEach(x=>x.classList.toggle('selected',x.contains(el)&&el.checked));
       }
     }
   });
   app.addEventListener('click',e=>{
     const page=e.target.closest('[data-jump]');if(page){choosePage(Number(page.dataset.jump));return;}
+    const section=e.target.closest('[data-listening-part]');if(section){chooseListeningPart(Number(section.dataset.listeningPart));return;}
     const control=e.target.closest('[data-action]');if(!control)return;
     const action=control.dataset.action;
     if(action==='next')move(1);else if(action==='prev')move(-1);
@@ -377,6 +414,8 @@ function setupListeners(){
     else if(action==='confirm-main')showMainConfirm();
     else if(action==='confirm-listening')finishListening();
     else if(action==='retry-main')lockTimedSection(true).catch(()=>{});
+    else if(action==='listening-next')chooseListeningPart(2);
+    else if(action==='listening-prev')chooseListeningPart(1);
     else if(action==='play-1'||action==='play-2'){
       if(state.reservedAudio===Number(action.slice(-1)))playReserved();
       else playRecording(Number(action.slice(-1)));
@@ -408,11 +447,16 @@ function setupListeners(){
 }
 async function init(){
   setupListeners();
-  if(DEMO){document.getElementById('preview-banner').hidden=false;connection('Preview only','gold');}
+  if(DEMO){document.getElementById('preview-banner').hidden=false;connection('Not connected','red');}
   else connection('Connecting…');
   try{const res=await fetch('questions.json',{cache:'no-store'});if(!res.ok)throw new Error('questions.json could not be loaded');examData=await res.json();
     if(examData.questions.length!==74)throw new Error('Expected 74 questions');
   }catch(e){app.innerHTML=`<section class="retry-panel"><h2>Could not load exam</h2><p>${escapeHtml(e.message)}. Open this folder through a local web server or GitHub Pages, not a file:// URL.</p></section>`;return;}
+  if(DEMO&&!PREVIEW_REQUESTED){
+    app.innerHTML=`<section class="retry-panel"><div class="eyebrow">Setup required</div><h2>Google Sheets is not connected</h2><p>The Apps Script URL is missing in <code>config.js</code>. This exam cannot start until your instructor connects Google Sheets. To try an offline preview intentionally, add <code>?preview=1</code> to the page URL.</p></section>`;
+    return;
+  }
+  if(DEMO)connection('Preview only','gold');
   const cached=remembered();
   if(cached&&cached.token){
     state=cached;
