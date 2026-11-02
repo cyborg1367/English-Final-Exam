@@ -8,7 +8,7 @@ const CFG=window.EXAM_CONFIG||{};
 const API=String(CFG.APPS_SCRIPT_URL||'').trim();
 const DEMO=!API;
 const PREVIEW_REQUESTED=new URLSearchParams(window.location.search).get('preview')==='1';
-const DURATION=Number(CFG.DURATION_MINUTES)||60;
+const DURATION=Number(CFG.DURATION_MINUTES)||80;
 // Keep preview and live sessions separate, so an old preview submission never blocks live enrollment.
 const STORAGE_KEY=DEMO?'english_final_exam_preview_v2':'english_final_exam_live_v2_'+Array.from(API).reduce((h,c)=>(Math.imul(31,h)+c.charCodeAt(0))>>>0,0).toString(16);
 const AUDIO_FILES={1:'assets/listening-part-1.mp3',2:'assets/listening-part-2.mp3'};
@@ -25,7 +25,10 @@ const timerNode=document.getElementById('timer-head');
 const confirmDialog=document.getElementById('confirm-dialog');
 let examData=null, state=null, currentId=1, busy=false, savingTimer=null;
 let activeAudio=null, playBusy=false, requestCounter=0, operationChain=Promise.resolve();
-let serverOffset=0, timerJob=null, syncing=false, lastToast=0;
+let serverOffset=0, timerJob=null, syncing=false, lastToast=0, mainRetryNeeded=false;
+// After the timer reaches zero, the frozen final snapshot may be transmitted for up to 30s.
+// The same transport-only window is enforced by Apps Script; it never adds writing time.
+const MAIN_FINAL_GRACE_MS=30000;
 const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const clockMs=()=>Date.now()+serverOffset;
 const isMain=()=>state&&state.stage==='MAIN';
@@ -44,13 +47,15 @@ function remembered(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'
 const token=()=>{if(window.crypto&&crypto.randomUUID)return crypto.randomUUID()+'-'+crypto.randomUUID();return 'exam-'+Date.now()+'-'+Math.random().toString(36).slice(2)+'-'+Math.random().toString(36).slice(2);};
 function useServer(s,{initial=false}={}){
   serverOffset=s.serverNow-Date.now();
-  if(!state){state={token:'',...s};return;}
+  // Track what the server really holds, separately from unsaved local revisions.
+  const serverMainRev=Number(s.mainRev)||0;
+  if(!state){state={token:'',...s,serverMainRev};return;}
   const localMain=state.mainAnswers||{},localListen=state.listeningAnswers||{};
   const localMainRev=state.mainRev||0,localListenRev=state.listeningRev||0;
   const oldStage=state.stage;
   const remoteMain=s.mainRev>=localMainRev?s.mainAnswers:localMain;
   const remoteListen=s.listeningRev>=localListenRev?s.listeningAnswers:localListen;
-  Object.assign(state,s,{mainAnswers:remoteMain,listeningAnswers:remoteListen,
+  Object.assign(state,s,{serverMainRev,mainAnswers:remoteMain,listeningAnswers:remoteListen,
     mainRev:Math.max(s.mainRev,localMainRev),listeningRev:Math.max(s.listeningRev,localListenRev)});
   // The server is authoritative about whether timed questions remain editable.
   if(s.stage!=='MAIN')state.mainAnswers=s.mainAnswers;
@@ -94,9 +99,11 @@ function serialized(op){const result=operationChain.catch(()=>{}).then(op);opera
 function localMutation(p){
   const now=Date.now();
   if(p.action==='saveMain'||p.action==='sealMain'){
-    if(state.stage!=='MAIN'||now>=state.deadline){state.stage='LISTENING';state.mainLockedAt=state.deadline;return;}
+    if(state.stage!=='MAIN')return;
+    if(p.action==='saveMain'&&now>=state.deadline)return;
+    if(now>state.deadline+MAIN_FINAL_GRACE_MS){state.stage='LISTENING';state.mainLockedAt=state.deadline;return;}
     if(p.revision>=state.mainRev){state.mainRev=p.revision;state.mainAnswers={...p.answers};}
-    if(p.action==='sealMain'){state.mainLockedAt=now;state.stage='LISTENING';}
+    if(p.action==='sealMain'){state.mainLockedAt=Math.min(now,state.deadline);state.stage='LISTENING';}
   }else if(p.action==='claimPlay'){
     if(state.stage!=='LISTENING')throw new Error('Listening is not open');
     if(!state.claimIds.includes(p.requestId)){
@@ -112,7 +119,7 @@ function localMutation(p){
 }
 function nextRevision(last){return Math.max(Date.now(),Number(last||0)+1);}
 function setAnswer(questionId,value){
-  if(!state||busy||state.stage==='DONE'||(state.stage==='MAIN'&&clockMs()>=state.deadline))return;
+  if(!state||busy||state.stage==='DONE'||(state.stage==='MAIN'&&(state.pendingMainSeal||clockMs()>=state.deadline)))return;
   const target=state.stage==='MAIN'?'mainAnswers':'listeningAnswers';
   state[target][questionId]=value;
   state[state.stage==='MAIN'?'mainRev':'listeningRev']=nextRevision(state[state.stage==='MAIN'?'mainRev':'listeningRev']);
@@ -120,7 +127,7 @@ function setAnswer(questionId,value){
   clearTimeout(savingTimer);savingTimer=setTimeout(()=>{saveAnswers().catch(err=>{connection('Connection issue','red');updateSaveLabel('Not saved · Retry');showToast(err.message,5000);});},900);
 }
 function saveAnswers(){
-  if(!state||state.stage==='DONE')return Promise.resolve();
+  if(!state||state.stage==='DONE'||(state.stage==='MAIN'&&state.pendingMainSeal))return Promise.resolve();
   const stage=state.stage;
   const p=stage==='MAIN'?{action:'saveMain',token:state.token,revision:state.mainRev,answers:{...state.mainAnswers}}
                             :{action:'saveListening',token:state.token,revision:state.listeningRev,answers:{...state.listeningAnswers}};
@@ -145,9 +152,11 @@ function advanceWindow(){
     const remaining=state.deadline-clockMs();
     timerNode.textContent=mmss(remaining);
     timerNode.classList.toggle('urgent',remaining<5*60000);
-    if(remaining<=0&&!busy){busy=true;lockTimedSection(true).catch(err=>{
-      busy=false;connection('Connection issue','red');showToast(err.message,6000);
-    });}
+    if((remaining<=0||state.pendingMainSeal)&&!busy&&!mainRetryNeeded){
+      lockTimedSection(true).catch(err=>{
+        connection('Connection issue','red');showToast(err.message,6000);
+      });
+    }
   }
 }
 function navGroups(){
@@ -183,7 +192,7 @@ function sidebar(){
   return `<aside class="sidebar"><div class="side-title">Your progress</div><div class="progress-track"><span style="width:${100*n/(to-from+1)}%"></span></div>
     <div class="progress-copy"><span id="progress-number">${n} / ${to-from+1} answered</span><span id="progress-pct">${Math.round(100*n/(to-from+1))}%</span></div>
     <div class="sidebar-nav">${navGroups()}</div>
-    <div class="side-note">${isMain()?'You can change answers until the 60-minute deadline. Once locked, this stage cannot be reopened.':'Listening is untimed. Each recording may be played only twice, with no pause, replay within a play, or seeking.'}</div>
+    <div class="side-note">${isMain()?'You can change answers until the ${DURATION}-minute deadline. Once locked, this stage cannot be reopened.':'Listening is untimed. Each recording may be played only twice, with no pause, replay within a play, or seeking.'}</div>
     ${isMain()?'<button type="button" class="button primary full" data-action="confirm-main">Finish timed section →</button>':'<button type="button" class="button primary full" data-action="confirm-listening">Submit final exam →</button>'}
   </aside>`;
 }
@@ -234,7 +243,7 @@ function mainQuestion(){
   let extra='';
   if(q.id>=21&&q.id<=26)extra=`<div class="word-chip-row">${examData.wordBank.map(x=>`<span class="word-chip">${escapeHtml(x)}</span>`).join('')}</div>`;
   return `<div class="workspace"><div class="workspace-intro"><div><div class="eyebrow">Stage 01 · Timed exam</div><h2>${escapeHtml(section.name)}</h2><p>${escapeHtml(q.subsection)} · ${escapeHtml(section.detail)}</p></div>
-    <div class="workspace-top-meta"><span class="pill green">Timed · 60 minutes</span><span class="pill">Q ${currentId} / 64</span></div></div>
+    <div class="workspace-top-meta"><span class="pill green">Timed · ${DURATION} minutes</span><span class="pill">Q ${currentId} / 64</span></div></div>
     <div class="${passage?'passage-layout':''}">${passage}<section class="question-card"><div class="question-top"><span class="eyebrow">Question ${currentId}</span><span class="pill ${flags.has(currentId)?'gold':''}">${flags.has(currentId)?'Flagged for review':'Manual grading'}</span></div>
     <div class="question-title">${escapeHtml(q.prompt)}</div>${extra}${answerMarkup(q)}${footer()}</section></div>
     <div class="footer-line"><span>You may revisit any timed question before submitting this stage.</span><span>Answers are saved automatically.</span></div></div>`;
@@ -273,12 +282,12 @@ function entry(){
   timerNode.hidden=true;
   document.getElementById('student-head').textContent='';
   app.innerHTML=`<section class="login-layout"><div class="login-story"><div class="eyebrow">Learn. Think. Express.</div><h1>Every word<br>has meaning.</h1><p>A structured assessment of your English skills, from vocabulary and grammar to reading, writing and listening.</p><div class="story-art" aria-hidden="true"><div class="story-orbit"></div><div class="story-orbit second"></div><div class="story-book"></div></div><div class="story-bottom"><div class="eyebrow">Your instructor</div><strong>${escapeHtml(CFG.INSTRUCTOR||'Course Instructor')}</strong><div class="small" style="color:#bdd3c7">English Final Assessment</div></div></div>
-    <form class="login-form" id="entry-form"><div class="eyebrow">Ready when you are</div><h2>Enter your assessment</h2><p>First complete the 60-minute section. Listening follows separately, with only two plays available per audio.</p>
-      <div class="overview-facts"><div class="fact"><strong>74</strong><span>Questions</span></div><div class="fact"><strong>60</strong><span>Timed minutes</span></div><div class="fact"><strong>2</strong><span>Exam stages</span></div></div>
+    <form class="login-form" id="entry-form"><div class="eyebrow">Ready when you are</div><h2>Enter your assessment</h2><p>First complete the ${DURATION}-minute section. Listening follows separately, with only two plays available per audio.</p>
+      <div class="overview-facts"><div class="fact"><strong>74</strong><span>Questions</span></div><div class="fact"><strong>${DURATION}</strong><span>Timed minutes</span></div><div class="fact"><strong>2</strong><span>Exam stages</span></div></div>
       <label class="field-label" for="student-name">Full name</label><input class="field" id="student-name" name="name" type="text" required minlength="2" maxlength="120" placeholder="Enter your full name" autocomplete="name">
       <label class="field-label" for="student-id">Student ID</label><input class="field" id="student-id" name="studentId" type="text" required minlength="2" maxlength="80" placeholder="Enter your student ID" autocomplete="off">
       <p class="form-error" id="entry-error" role="alert"></p><button class="button primary full" type="submit" id="entry-start">Start timed section →</button>
-      <div class="rules"><strong>Exam rules</strong><ul><li>The first 64 questions have one shared 60-minute timer.</li><li>When the first stage ends, it locks permanently. No return is possible.</li><li>Listening has no time limit. Each recording can be started only twice, with no pause or seeking.</li><li>Your instructor grades all responses manually.</li></ul></div>
+      <div class="rules"><strong>Exam rules</strong><ul><li>The first 64 questions have one shared ${DURATION}-minute timer.</li><li>When the first stage ends, it locks permanently. No return is possible.</li><li>Listening has no time limit. Each recording can be started only twice, with no pause or seeking.</li><li>Your instructor grades all responses manually.</li></ul></div>
     </form></section>`;
   document.getElementById('entry-form').addEventListener('submit',start);
 }
@@ -302,8 +311,17 @@ function render(){
   if(!state){entry();return;}
   document.getElementById('student-head').textContent=state.studentName;
   if(state.stage==='DONE'){completed();return;}
-  if(state.stage==='MAIN'&&clockMs()>=state.deadline){
-    app.innerHTML='<div class="loading-panel"><strong>Your 60 minutes have ended.</strong><p>Locking the timed section and saving your responses…</p></div>';
+  if(state.stage==='LISTENING'&&state.pendingMainSeal){
+    if(DEMO||Number(state.serverMainRev||0)>=state.pendingMainSeal.revision){
+      delete state.pendingMainSeal;persist();
+    }else{
+      timerNode.hidden=true;
+      app.innerHTML='<section class="retry-panel"><h2>The timed stage is locked.</h2><p>The server has locked the exam, but could not confirm the last Writing changes. Earlier autosaved answers remain recorded. Contact the instructor; these responses cannot be edited or resent.</p></section>';
+      return;
+    }
+  }
+  if(state.stage==='MAIN'&&(state.pendingMainSeal||clockMs()>=state.deadline)){
+    app.innerHTML=`<div class="loading-panel"><strong>Your timed section is closed.</strong><p>Transferring the final saved answers, including Writing. No further edits are allowed…</p></div>`;
     advanceWindow();return;
   }
   if(state.stage==='MAIN'&&(currentId<1||currentId>64))currentId=1;
@@ -329,19 +347,34 @@ function chooseListeningPart(part){
 function showMainConfirm(){if(!isMain()||busy)return;document.getElementById('confirm-count').textContent=`${count(1,64)} / 64`;
   document.getElementById('confirm-remaining').textContent=mmss(state.deadline-clockMs());confirmDialog.showModal();}
 async function lockTimedSection(auto=false){
-  if(!state||state.stage!=='MAIN')return;
-  clearTimeout(savingTimer);busy=true;confirmDialog.close();
-  const b=document.querySelector('[data-action="confirm-main"]');if(b)b.disabled=true;
-  connection('Locking stage…','gold');
+  if(!state||state.stage!=='MAIN'||busy)return;
+  clearTimeout(savingTimer);
+  busy=true;mainRetryNeeded=false;
+  if(confirmDialog.open)confirmDialog.close();
+  // Capture exactly what the student had entered when their time expired (or
+  // when they voluntarily submitted). This snapshot is immutable on retries.
+  // Persist before requesting the network, so a refresh cannot reopen editing.
+  if(!state.pendingMainSeal){
+    state.pendingMainSeal={action:'sealMain',token:state.token,revision:state.mainRev,answers:{...state.mainAnswers}};
+    persist();
+  }
+  const p=state.pendingMainSeal;
+  app.innerHTML='<div class="loading-panel"><strong>Timed section locked.</strong><p>Sending your final answers, including Writing, to Google Sheets…</p></div>';
+  connection('Saving final answers…','gold');
   try{
-    const p={action:'sealMain',token:state.token,revision:state.mainRev,answers:{...state.mainAnswers}};
-    await serialized(()=>commit(p,s=>s.stage==='LISTENING'||s.stage==='DONE',4));
+    // Do not wait for queued autosaves: a slow earlier request must not delay
+    // the deadline snapshot past the server's transfer-only grace window.
+    await commit(p,s=>(s.stage==='LISTENING'||s.stage==='DONE')&&s.mainRev>=p.revision,4);
+    delete state.pendingMainSeal;
+    state.serverMainRev=p.revision;
+    persist();
     currentId=65;render();
     connection(DEMO?'Preview only':'Connected',DEMO?'gold':'green');
-    showToast(auto?'Time is up. Timed answers are locked.':'Timed answers submitted and locked. Welcome to Listening.');
+    showToast(auto?'Time is up. Your final timed answers were saved.':'Timed answers submitted and locked. Welcome to Listening.');
   }catch(error){
-    if(!auto)showToast(error.message,5500);
-    app.innerHTML=`<section class="retry-panel"><h2>Timed section is locked locally.</h2><p>We could not confirm the transition in Google Sheets. Please keep this page open and retry. You cannot edit timed answers.</p><button class="button primary" data-action="retry-main">Retry confirmation</button></section>`;
+    mainRetryNeeded=true;
+    if(state.stage==='LISTENING'){render();}
+    else app.innerHTML='<section class="retry-panel"><h2>Timed section is locked.</h2><p>We could not confirm that the final answers reached Google Sheets. You cannot edit them. Check your connection and retry the saved snapshot. If the 30-second transfer window has expired, contact your instructor.</p><button class="button primary" data-action="retry-main">Retry final save</button></section>';
     throw error;
   }finally{busy=false;}
 }
@@ -413,7 +446,7 @@ function setupListeners(){
     else if(action==='flag'){flags.has(currentId)?flags.delete(currentId):flags.add(currentId);render();}
     else if(action==='confirm-main')showMainConfirm();
     else if(action==='confirm-listening')finishListening();
-    else if(action==='retry-main')lockTimedSection(true).catch(()=>{});
+    else if(action==='retry-main'){mainRetryNeeded=false;lockTimedSection(true).catch(()=>{});}
     else if(action==='listening-next')chooseListeningPart(2);
     else if(action==='listening-prev')chooseListeningPart(1);
     else if(action==='play-1'||action==='play-2'){
