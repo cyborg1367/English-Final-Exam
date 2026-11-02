@@ -39,6 +39,10 @@ const hasResponse=v=>String(v??'').split(' | ').some(piece=>piece.trim().length>
 const count=(from,to)=>Array.from({length:to-from+1},(_,i)=>String(from+i)).filter(key=>hasResponse((from<=64?state.mainAnswers:state.listeningAnswers)[key])).length;
 const readingPassage=(title,body)=>`<section class="passage-card"><div class="eyebrow">Source passage</div><h3>${escapeHtml(title)}</h3><div class="passage">${escapeHtml(body)}</div></section>`;
 const mmss=ms=>{const total=Math.max(0,Math.ceil(ms/1000));return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;};
+const hhmmss=ms=>{const total=Math.max(0,Math.ceil(ms/1000));return `${String(Math.floor(total/3600)).padStart(2,'0')}:${String(Math.floor(total%3600/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;};
+const wordCount=text=>String(text||'').trim()?String(text).trim().split(/\s+/u).length:0;
+const icons={vocabulary:'<path d="m4 19 3-1.3c2-.7 4-.5 6 .3V5c-2-1-4-1.1-6-.3L4 6z"/><path d="M13 18c2-.8 4-1 6-.3l2 1.3V6l-2-1.3c-2-.8-4-.7-6 .3"/>',grammar:'<path d="M12 3v3m0 12v3M3 12h3m12 0h3M6 6l2 2m8 8 2 2m0-12-2 2M8 16l-2 2"/><circle cx="12" cy="12" r="4"/>',reading:'<path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8l-5-5H8z"/><path d="M16 3v5h5M7 12h10M7 16h10"/>',writing:'<path d="m16 4 4 4M4 20l4-.8L20 7a2.8 2.8 0 0 0-4-4L4 15z"/>',listening:'<path d="M3 14v-3a9 9 0 0 1 18 0v3M3 14h4v7H5a2 2 0 0 1-2-2zm14 0h4v5a2 2 0 0 1-2 2h-2z"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>'};
+const icon=name=>`<svg class="ui-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.vocabulary}</svg>`;
 const showToast=(message,timeout=3400)=>{const n=document.getElementById('toast');n.textContent=message;n.hidden=false;const stamp=++lastToast;setTimeout(()=>{if(stamp===lastToast)n.hidden=true;},timeout);};
 const connection=(str,klass='')=>{const n=document.getElementById('connection-label');n.textContent=str;n.className='pill '+klass;};
 const updateSaveLabel=(message,kind='')=>{const n=document.querySelector('#save-status');if(n){n.textContent=message;n.className='footer-status '+kind;}};
@@ -150,8 +154,12 @@ function advanceWindow(){
   timerNode.hidden=state.stage!=='MAIN';
   if(state.stage==='MAIN'){
     const remaining=state.deadline-clockMs();
-    timerNode.textContent=mmss(remaining);
-    timerNode.classList.toggle('urgent',remaining<5*60000);
+    const timerValue=timerNode.querySelector('.timer-value');
+    if(timerValue)timerValue.textContent=hhmmss(remaining);
+    else timerNode.textContent=hhmmss(remaining);
+    timerNode.setAttribute('aria-label',`Time remaining ${hhmmss(remaining)}`);
+    timerNode.classList.toggle('warning',remaining<=10*60000&&remaining>5*60000);
+    timerNode.classList.toggle('urgent',remaining<=5*60000);
     if((remaining<=0||state.pendingMainSeal)&&!busy&&!mainRetryNeeded){
       lockTimedSection(true).catch(err=>{
         connection('Connection issue','red');showToast(err.message,6000);
@@ -159,18 +167,29 @@ function advanceWindow(){
     }
   }
 }
+const expandedGroups=new Set(['vocabulary']);
 function navGroups(){
-  const allowed=state.stage==='MAIN'?PARTS.slice(0,4):PARTS.slice(4);
-  return allowed.map(p=>{
-    if(p.id==='listening'){
-      return `<div class="sidebar-section"><div class="navigator-label">Listening sections</div>
-      ${[1,2].map(part=>{const lo=part===1?65:70,hi=part===1?69:74;return `<button type="button" class="listening-nav ${currentId===lo?'active':''}" data-listening-part="${part}"><span class="listening-nav-title">Part ${part} · ${part===1?'Animal facts':'Celebrations'}</span><span class="listening-nav-detail">Questions ${lo}–${hi} · <span data-listening-progress="${part}">${count(lo,hi)} / 5 answered</span></span></button>`;}).join('')}</div>`;
-    }
-    const nav=Array.from({length:p.to-p.from+1},(_,i)=>{
-      const id=p.from+i, val=(p.from<=64?state.mainAnswers:state.listeningAnswers)[id];
-      return `<button class="qnav ${hasResponse(val)?'answered':''} ${id===currentId?'current':''} ${flags.has(id)?'flagged':''}" data-jump="${id}" title="Question ${id}" type="button">${id}</button>`;
+  if(!isMain())return `<div class="sidebar-stage"><span class="stage-dot"></span> Stage 02 <span class="stage-duration">Untimed</span></div><div class="sidebar-section listening-section">
+    <div class="navigator-label">Two recordings · 10 questions</div>
+    ${[1,2].map(part=>{const lo=part===1?65:70,hi=part===1?69:74;
+      return `<button type="button" class="listening-nav ${currentId===lo?'active':''}" data-listening-part="${part}">
+        <span class="nav-section-icon">${icon('listening')}</span><span class="listening-nav-copy"><span class="listening-nav-title">Listening · Part ${part}</span><span class="listening-nav-detail">Questions ${lo}–${hi} · <span data-listening-progress="${part}">${count(lo,hi)} / 5 answered</span></span></span><span class="side-chevron">›</span>
+      </button>`;}).join('')}</div>`;
+  return `<div class="sidebar-stage"><span class="stage-dot"></span> Stage 01 <span class="stage-duration">${DURATION} minutes</span></div>`+PARTS.slice(0,4).map(p=>{
+    const done=count(p.from,p.to),total=p.to-p.from+1,active=currentId>=p.from&&currentId<=p.to;
+    const expanded=expandedGroups.has(p.id);
+    const nav=Array.from({length:total},(_,i)=>{
+      const id=p.from+i,val=state.mainAnswers[id];
+      return `<button class="qnav ${hasResponse(val)?'answered':''} ${id===currentId?'current':''} ${flags.has(id)?'flagged':''}" data-jump="${id}" title="Question ${id}" type="button" ${id===currentId?'aria-current="true"':''}>${id}</button>`;
     }).join('');
-    return `<div class="sidebar-section"><div class="navigator-label">${escapeHtml(p.name)}</div><div class="question-grid">${nav}</div></div>`;
+    return `<section class="sidebar-section category-card ${active?'category-active':''}" data-category="${p.id}">
+      <button class="category-header" type="button" data-toggle-group="${p.id}" aria-expanded="${expanded}">
+       <span class="nav-section-icon">${icon(p.id)}</span><span class="category-copy"><strong>${p.name}</strong><small>${p.from===p.to?'Question '+p.from:'Questions '+p.from+'–'+p.to}</small></span>
+       <span class="category-count"><strong data-section-progress="${p.id}">${done} / ${total}</strong><span class="category-meter"><span data-section-meter="${p.id}" style="width:${Math.round(done/total*100)}%"></span></span></span>
+       <span class="side-chevron ${expanded?'expanded':''}">⌄</span>
+      </button>
+      <div class="category-body" ${expanded?'':'hidden'}><div class="question-grid">${nav}</div></div>
+    </section>`;
   }).join('');
 }
 const flags=new Set();
@@ -184,15 +203,17 @@ function refreshNavigation(){
     const id=Number(el.dataset.jump),set=(id<=64?state.mainAnswers:state.listeningAnswers);
     el.classList.toggle('answered',hasResponse(set[id]));
   });
+  document.querySelectorAll('[data-section-progress]').forEach(el=>{const p=PARTS.find(x=>x.id===el.dataset.sectionProgress);if(p)el.textContent=`${count(p.from,p.to)} / ${p.to-p.from+1}`;});
+  document.querySelectorAll('[data-section-meter]').forEach(el=>{const p=PARTS.find(x=>x.id===el.dataset.sectionMeter);if(p)el.style.width=(100*count(p.from,p.to)/(p.to-p.from+1))+'%';});
   document.querySelectorAll('[data-listening-progress]').forEach(el=>{const part=Number(el.dataset.listeningProgress);el.textContent=count(part===1?65:70,part===1?69:74)+' / 5 answered';});
   const confirmNode=document.getElementById('confirm-count');if(confirmNode)confirmNode.textContent=`${count(1,64)} / 64`;
 }
 function sidebar(){
   const from=isMain()?1:65,to=isMain()?64:74,n=count(from,to);
-  return `<aside class="sidebar"><div class="side-title">Your progress</div><div class="progress-track"><span style="width:${100*n/(to-from+1)}%"></span></div>
+  return `<aside class="sidebar" data-stage="${state.stage}"><div class="side-title">Exam navigation <span class="side-subtitle">${isMain()?'Timed assessment':'Listening assessment'}</span></div><div class="progress-track"><span style="width:${100*n/(to-from+1)}%"></span></div>
     <div class="progress-copy"><span id="progress-number">${n} / ${to-from+1} answered</span><span id="progress-pct">${Math.round(100*n/(to-from+1))}%</span></div>
-    <div class="sidebar-nav">${navGroups()}</div>
-    <div class="side-note">${isMain()?'You can change answers until the ${DURATION}-minute deadline. Once locked, this stage cannot be reopened.':'Listening is untimed. Each recording may be played only twice, with no pause, replay within a play, or seeking.'}</div>
+    <div class="sidebar-nav">${navGroups()}</div><div class="side-legend"><span><i class="legend-tile legend-answered"></i> Answered</span><span><i class="legend-tile legend-current"></i> Current</span><span><i class="legend-tile"></i> Empty</span></div>
+    <div class="side-note">${isMain()?`You can change answers until the ${DURATION}-minute deadline. Once locked, this stage cannot be reopened.`:'Listening is untimed. Each recording may be played only twice, with no pause, replay within a play, or seeking.'}</div>
     ${isMain()?'<button type="button" class="button primary full" data-action="confirm-main">Finish timed section →</button>':'<button type="button" class="button primary full" data-action="confirm-listening">Submit final exam →</button>'}
   </aside>`;
 }
@@ -224,10 +245,22 @@ function answerMarkup(q){
   }
   if(q.kind==='text' && [50,52,54,55].includes(q.id))return inlineBlanks(q,value);
   const label=q.kind==='writing'?'Your blog post':q.kind==='textarea'?'Rewrite the complete sentence':'Your answer';
-  if(q.kind==='writing'||q.kind==='textarea'){
-    const countWords=value.trim()?value.trim().split(/\s+/).length:0;
-    return `<div class="answer-label">${label}</div><textarea class="answer-textarea ${q.kind==='writing'?'writing':''}" data-answer="${q.id}" spellcheck="false" placeholder="Type your answer here…">${escapeHtml(value)}</textarea>
-    ${q.kind==='writing'?`<div class="writing-info"><span>Write 50–80 words.</span><span id="word-count" class="${countWords>=50&&countWords<=80?'good':'warn'}">${countWords} words</span></div>`:''}`;
+  if(q.kind==='writing'){
+    const words=wordCount(value);
+    const status=words<50?'below':words>80?'over':'within';
+    const statusText=words<50?`${50-words} more word${50-words===1?'':'s'} needed`:words>80?`${words-80} word${words-80===1?'':'s'} over the maximum`:'Within the required word range';
+    return `<section class="writing-studio" aria-label="Blog post writing editor">
+      <div class="writing-prompt"><div class="writing-prompt-icon">${icon('writing')}</div><div><div class="eyebrow">Writing task · Question 64</div><h3>Write a blog post</h3><p>${escapeHtml(q.prompt)}</p></div></div>
+      <div class="editor-shell"><div class="editor-toolbar"><span class="editor-mode">✎ &nbsp;Plain-text editor</span><span class="editor-word-rule">Required: <strong>50–80 words</strong></span></div>
+        <label for="writing-response" class="sr-only">Your blog post, 50 to 80 words</label>
+        <textarea id="writing-response" class="answer-textarea writing" data-answer="${q.id}" spellcheck="false" autocomplete="off" placeholder="Start writing your blog post here…">${escapeHtml(value)}</textarea>
+        <div class="editor-bottom"><div class="word-feedback ${status}" id="writing-word-feedback" aria-live="polite"><span class="word-status-dot"></span><span id="writing-word-message">${escapeHtml(statusText)}</span></div><span class="word-count ${status}" id="word-count">${words} <small>/ 50–80 words</small></span></div>
+        <div class="word-meter" role="progressbar" aria-label="Word count progress toward 80-word maximum" aria-valuemin="0" aria-valuemax="80" aria-valuenow="${Math.min(words,80)}" id="word-meter"><span id="word-meter-fill" class="${status}" style="width:${Math.min(100,words/80*100)}%"></span></div>
+      </div><p class="writing-helper">Your response is saved automatically while you write. If time expires, the latest captured text is submitted and the editor locks.</p>
+    </section>`;
+  }
+  if(q.kind==='textarea'){
+    return `<div class="answer-label">${label}</div><textarea class="answer-textarea" data-answer="${q.id}" spellcheck="false" placeholder="Type your answer here…">${escapeHtml(value)}</textarea>`;
   }
   return `<div class="answer-label">${label}</div><input type="text" class="answer-field" autocomplete="off" spellcheck="false" data-answer="${q.id}" value="${escapeHtml(value)}" placeholder="Type your answer…">${q.id>=50&&q.id<=55?'<div class="hint-box">For questions with multiple blanks, enter the missing forms in order, separated by commas.</div>':''}`;
 }
@@ -237,15 +270,26 @@ function relatedPassage(q){
   if(q.hint==='menu')return `<section class="passage-card"><div class="eyebrow">Vocabulary · Illustrated menu</div><img class="menu-image" src="assets/menu.jpeg" alt="Restaurant menu with starters, main courses and desserts. Use this image to complete blanks 27 through 32."></section>`;
   return '';
 }
+function readingWorkspace(){
+  const readingQs=examData.questions.filter(q=>q.id>=56&&q.id<=63);
+  return `<div class="workspace reading-workspace"><div class="workspace-intro"><div><div class="eyebrow">Stage 01 · Timed exam</div><h2>${icon('reading')} Reading comprehension</h2><p>Read the passage and answer questions 56–63 · 4 points</p></div><div class="workspace-top-meta"><span class="pill green">Timed · ${DURATION} minutes</span><span class="pill">8 questions</span></div></div>
+    <div class="reading-split"><section class="reading-passage-panel" aria-label="Reading passage"><div class="reading-pane-head"><span class="reading-pane-icon">${icon('reading')}</span><div><div class="eyebrow">READING PASSAGE</div><h3>Digital habits across generations</h3></div></div><div class="reading-passage-scroll" tabindex="0"><div class="reading-body">${escapeHtml(examData.reading)}</div></div><div class="reading-pane-foot">Scroll this passage independently of the questions.</div></section>
+      <section class="reading-answers-panel" aria-label="Reading questions"><div class="reading-pane-head reading-question-heading"><div><div class="eyebrow">YOUR RESPONSES</div><h3>Questions 56–63</h3></div><span class="pill green" id="reading-answered">${count(56,63)} / 8 answered</span></div>
+        <div class="reading-questions-scroll" id="reading-questions-scroll" tabindex="0">${readingQs.map(q=>`<article class="reading-item ${currentId===q.id?'active':''}" data-reading-question="${q.id}"><div class="reading-item-top"><span class="eyebrow">Question ${q.id}</span><span class="reading-item-type">${q.id<=60?'True or false':'Word from the text'}</span></div><div class="reading-item-prompt">${escapeHtml(q.prompt)}</div>${answerMarkup(q)}</article>`).join('')}</div>
+        <div class="reading-pane-actions"><span id="save-status" class="footer-status saved">Answers saved</span><div class="nav-actions"><button class="button" type="button" data-action="reading-previous">← Grammar</button><button class="button primary" type="button" data-action="reading-next">Writing →</button></div></div>
+      </section></div><div class="footer-line"><span>The passage and questions can be scrolled separately.</span><span>Responses autosave as you answer.</span></div>
+  </div>`;
+}
 function mainQuestion(){
   const q=qs(currentId),section=displayedPart();
+  if(section.id==='reading')return readingWorkspace();
   const passage=relatedPassage(q);
   let extra='';
   if(q.id>=21&&q.id<=26)extra=`<div class="word-chip-row">${examData.wordBank.map(x=>`<span class="word-chip">${escapeHtml(x)}</span>`).join('')}</div>`;
   return `<div class="workspace"><div class="workspace-intro"><div><div class="eyebrow">Stage 01 · Timed exam</div><h2>${escapeHtml(section.name)}</h2><p>${escapeHtml(q.subsection)} · ${escapeHtml(section.detail)}</p></div>
     <div class="workspace-top-meta"><span class="pill green">Timed · ${DURATION} minutes</span><span class="pill">Q ${currentId} / 64</span></div></div>
     <div class="${passage?'passage-layout':''}">${passage}<section class="question-card"><div class="question-top"><span class="eyebrow">Question ${currentId}</span><span class="pill ${flags.has(currentId)?'gold':''}">${flags.has(currentId)?'Flagged for review':'Manual grading'}</span></div>
-    <div class="question-title">${escapeHtml(q.prompt)}</div>${extra}${answerMarkup(q)}${footer()}</section></div>
+    ${q.kind==='writing' ? '' : `<div class="question-title">${escapeHtml(q.prompt)}</div>`}${extra}${answerMarkup(q)}${footer()}</section></div>
     <div class="footer-line"><span>You may revisit any timed question before submitting this stage.</span><span>Answers are saved automatically.</span></div></div>`;
 }
 function footer(){
@@ -258,13 +302,17 @@ function footer(){
 function audioCard(part){
   const used=part===1?state.audio1Plays:state.audio2Plays;
   const rem=Math.max(0,2-used);
-  const partTitle=part===1?'Part 1 · Animal facts':'Part 2 · Celebrations';
   const isPlaying=activeAudio===part && !player.paused;
   const reserved=state.reservedAudio===part;
   const disabled=playBusy || activeAudio!==null || (rem===0 && !reserved);
-  return `<section class="audio-card"><div class="audio-head"><div><strong>${partTitle}</strong><p>Recording ${part} · ${part===1?'Questions 65–69':'Questions 70–74'}</p></div><span class="pill ${rem===0?'red':'gold'}">${rem} ${rem===1?'play':'plays'} left</span></div>
-    <div class="audio-actions"><button class="button primary" data-action="play-${part}" ${disabled?'disabled':''}>${isPlaying?'▶ Playing…':playBusy?'Preparing…':reserved?'▶ Start reserved audio':rem===0?'Playback limit reached':'▶ Play recording'}</button><div class="audio-progress"><span id="audio-progress-${part}" style="width:${isPlaying&&player.duration?100*player.currentTime/player.duration:0}%"></span></div><span class="small muted mono">${isPlaying&&Number.isFinite(player.duration)?mmss(player.duration*1000-player.currentTime*1000):'2 plays max'}</span></div>
-    <div class="audio-note">A play is used when you press Play, even if you refresh or close the page. No pause, resume, replay inside the recording or seeking.</div></section>`;
+  const length=part===1?'01:57':'04:17';
+  return `<section class="audio-card" aria-label="Audio recording ${part}">
+    <div class="audio-head"><div class="audio-identity"><span class="audio-icon">${icon('listening')}</span><div><span class="eyebrow">LISTENING AUDIO</span><strong>Recording ${String(part).padStart(2,'0')}</strong><p>${part===1?'Animal quiz':'Celebrations'} · ${length}</p></div></div><span class="pill ${rem===0?'red':'green'}" id="plays-left-${part}">${rem} ${rem===1?'play':'plays'} remaining</span></div>
+    <div class="audio-player-row"><button class="audio-play-button" data-action="play-${part}" type="button" ${disabled?'disabled':''}>
+      <span class="audio-play-icon">${isPlaying?'♫':'▶'}</span><span>${isPlaying?'Playing recording':playBusy?'Preparing audio':reserved?'Start reserved play':rem===0?'Playback limit reached':'Play audio'}</span></button>
+      <div class="audio-player-track"><div class="audio-progress" role="progressbar" aria-label="Audio playback progress" aria-valuemin="0" aria-valuemax="100"><span id="audio-progress-${part}" style="width:${isPlaying&&player.duration?100*player.currentTime/player.duration:0}%"></span></div><div class="audio-times"><span id="audio-elapsed-${part}">${isPlaying?mmss(player.currentTime*1000):'00:00'}</span><span>${length}</span></div></div></div>
+    <div class="audio-note"><span class="audio-rule-icon">ⓘ</span><span>Each press of Play uses one attempt. Playback runs from start to finish — <strong>no pause, resume or seeking</strong>. Refreshing does not restore a used play.</span></div>
+  </section>`;
 }
 function listeningQuestion(){
   const part=currentId<=69?1:2;
@@ -272,9 +320,9 @@ function listeningQuestion(){
   const label=part===1?'Part 1 · Animal facts':'Part 2 · Celebrations';
   const questions=Array.from({length:5},(_,i)=>qs(first+i));
   return `<div class="workspace listening-workspace"><div class="workspace-intro"><div><div class="eyebrow">Stage 02 · Untimed exam</div><h2>Listening · Part ${part}</h2><p>${escapeHtml(label)} · Questions ${first}–${last}</p></div><div class="workspace-top-meta"><span class="pill green">No time limit</span><span class="pill">${count(first,last)} / 5 answered</span></div></div>
-  <section class="listening-intro"><div><h3>Listen carefully.</h3><p class="small muted">All five questions for this recording are shown below. You may play the recording at most twice.</p></div><span class="pill gold">No pause / No seek</span></section>
+  <section class="listening-intro"><div><h3>${icon('listening')} Listen carefully.</h3><p class="small muted">All five questions for this recording are shown below. You may play the recording at most twice.</p></div><span class="pill gold">No pause / No seek</span></section>
   ${audioCard(part)}
-  <div class="listening-questions">${questions.map(q=>`<section class="question-card listening-question" id="question-${q.id}"><div class="question-top"><span class="eyebrow">Question ${q.id}</span><span class="pill">${q.id<=69?'True / False':'Match the speaker'}</span></div><div class="question-title">${escapeHtml(q.prompt)}</div>${answerMarkup(q)}</section>`).join('')}</div>
+  <div class="listening-questions"><div class="listening-question-group-heading"><h3>Questions ${first}–${last}</h3><span>${part===1?'Select True or False for each statement':'Match each speaker with one celebration'}</span></div>${questions.map(q=>`<section class="question-card listening-question" id="question-${q.id}"><div class="question-top"><span class="eyebrow">Question ${q.id}</span><span class="pill">${q.id<=69?'True / False':'Match the speaker'}</span></div><div class="question-title">${escapeHtml(q.prompt)}</div>${answerMarkup(q)}</section>`).join('')}</div>
   <div class="listening-page-actions"><span id="save-status" class="footer-status saved">Answers saved</span><div class="nav-actions">${part===2?'<button class="button" data-action="listening-prev" type="button">← Part 1</button>':''}<button class="button primary" type="button" data-action="${part===1?'listening-next':'confirm-listening'}">${part===1?'Continue to Part 2 →':'Submit final exam →'}</button></div></div>
   <div class="footer-line"><span>Every recording has a separate two-play limit.</span><span>Part ${part} of 2</span></div></div>`;
 }
@@ -308,6 +356,10 @@ async function start(e){
   }catch(error){err.textContent=error.message+' Please retry, or contact your instructor.';button.disabled=false;state=null;}
 }
 function render(){
+  const previousSidebar=document.querySelector('.sidebar');
+  const previousSidebarScroll=previousSidebar?.scrollTop||0;
+  const previousSidebarScrollX=previousSidebar?.querySelector('.sidebar-nav')?.scrollLeft||0;
+  const previousSidebarStage=previousSidebar?.dataset.stage;
   if(!state){entry();return;}
   document.getElementById('student-head').textContent=state.studentName;
   if(state.stage==='DONE'){completed();return;}
@@ -328,6 +380,10 @@ function render(){
   if(state.stage==='LISTENING'&&(currentId<65||currentId>74))currentId=65;
   timerNode.hidden=state.stage!=='MAIN';
   app.innerHTML=`<div class="exam-layout">${sidebar()}<div>${state.stage==='MAIN'?mainQuestion():listeningQuestion()}</div></div>`;
+  if(previousSidebarStage===state.stage){
+    const nextSidebar=document.querySelector('.sidebar');
+    if(nextSidebar){nextSidebar.scrollTop=previousSidebarScroll;const nav=nextSidebar.querySelector('.sidebar-nav');if(nav)nav.scrollLeft=previousSidebarScrollX;}
+  }
   refreshNavigation();advanceWindow();
 }
 function completed(){
@@ -337,8 +393,29 @@ function completed(){
   <div class="complete-stats"><div><strong>${count(1,64)} / 64</strong><span>Timed questions answered</span></div><div><strong>${count(65,74)} / 10</strong><span>Listening questions answered</span></div></div>
   <div class="hint-box" style="margin-top:22px">Exam reference: <strong>${escapeHtml(state.examId)}</strong><br>Instructor grading is completed separately in Google Sheets.</div></div>`;
 }
-function move(delta){if(!isMain())return;const next=currentId+delta;if(next<1||next>64)return;currentId=next;render();window.scrollTo({top:0,behavior:'smooth'});}
-function choosePage(id){if(state.stage!=='MAIN'||id<1||id>64)return;currentId=id;render();window.scrollTo({top:0,behavior:'smooth'});}
+function move(delta){if(!isMain())return;const next=currentId+delta;if(next<1||next>64)return;choosePage(next);}
+function focusReadingQuestion(id,scroll=true){
+  document.querySelectorAll('[data-reading-question]').forEach(el=>el.classList.toggle('active',Number(el.dataset.readingQuestion)===id));
+  document.querySelectorAll('.qnav[data-jump]').forEach(el=>{const selected=Number(el.dataset.jump)===id;el.classList.toggle('current',selected);if(selected)el.setAttribute('aria-current','true');else el.removeAttribute('aria-current');});
+  const el=document.querySelector(`[data-reading-question="${id}"]`),panel=document.getElementById('reading-questions-scroll');
+  if(el&&panel&&scroll){const top=el.getBoundingClientRect().top-panel.getBoundingClientRect().top+panel.scrollTop-14;panel.scrollTo({top,behavior:'smooth'});}
+}
+function choosePage(id){
+  if(state.stage!=='MAIN'||id<1||id>64)return;
+  const oldPart=displayedPart().id;
+  const wasReading=currentId>=56&&currentId<=63;
+  currentId=id;const part=displayedPart();expandedGroups.add(part.id);
+  if(wasReading&&part.id==='reading'&&document.getElementById('reading-questions-scroll')){focusReadingQuestion(id);return;}
+  render();window.scrollTo({top:0,behavior:'smooth'});
+  if(oldPart!==part.id){
+    const active=document.querySelector('.category-active'),side=document.querySelector('.sidebar'),nav=document.querySelector('.sidebar-nav');
+    if(active&&side&&nav){
+      if(window.innerWidth<=710)nav.scrollTo({left:active.offsetLeft-nav.offsetLeft,behavior:'smooth'});
+      else {const wanted=active.getBoundingClientRect().top-side.getBoundingClientRect().top+side.scrollTop-85;side.scrollTo({top:Math.max(0,wanted),behavior:'smooth'});}
+    }
+  }
+  if(part.id==='reading'&&id!==56)requestAnimationFrame(()=>focusReadingQuestion(id));
+}
 function chooseListeningPart(part){
   if(!state||state.stage!=='LISTENING'||(part!==1&&part!==2))return;
   if(playBusy||activeAudio!==null){showToast('The recording must finish before switching Listening pages.');return;}
@@ -426,23 +503,39 @@ function setupListeners(){
       parts[Number(element.dataset.blankIndex)]=element.value.trim();
       setAnswer(id,parts.join(' | '));
     }else if(element.type==='text'||element.tagName==='TEXTAREA')setAnswer(id,element.value);
-    if(id===64){const n=document.querySelector('#word-count');if(n){const words=element.value.trim()?element.value.trim().split(/\s+/).length:0;n.textContent=words+' words';n.className=words>=50&&words<=80?'good':'warn';}}
+    if(id===64){
+      const n=document.querySelector('#word-count'),note=document.getElementById('writing-word-message'),badge=document.getElementById('writing-word-feedback'),meter=document.getElementById('word-meter'),fill=document.getElementById('word-meter-fill');
+      const words=wordCount(element.value),category=words<50?'below':words>80?'over':'within';
+      if(n){n.innerHTML=`${words} <small>/ 50–80 words</small>`;n.className='word-count '+category;}
+      if(note)note.textContent=words<50?`${50-words} more word${50-words===1?'':'s'} needed`:words>80?`${words-80} word${words-80===1?'':'s'} over the maximum`:'Within the required word range';
+      if(badge)badge.className='word-feedback '+category;
+      if(fill){fill.className=category;fill.style.width=Math.min(100,words/80*100)+'%';}
+      if(meter)meter.setAttribute('aria-valuenow',Math.min(80,words));
+    }
+    if(id>=56&&id<=63){const target=document.getElementById('reading-answered');if(target)target.textContent=`${count(56,63)} / 8 answered`;}
+
   });
   app.addEventListener('change',e=>{
     const el=e.target;if(!el.dataset.answer)return;
     if(el.tagName==='SELECT'||el.type==='radio'){
       setAnswer(Number(el.dataset.answer),el.value);
       if(el.type==='radio'){
-        el.closest('.question-card').querySelectorAll('.option').forEach(x=>x.classList.toggle('selected',x.contains(el)&&el.checked));
+        el.closest('.question-card, .reading-item').querySelectorAll('.option').forEach(x=>x.classList.toggle('selected',x.contains(el)&&el.checked));
       }
+      if(Number(el.dataset.answer)>=56&&Number(el.dataset.answer)<=63){const target=document.getElementById('reading-answered');if(target)target.textContent=`${count(56,63)} / 8 answered`;}
+
     }
   });
   app.addEventListener('click',e=>{
+    const group=e.target.closest('[data-toggle-group]');if(group){const id=group.dataset.toggleGroup;if(expandedGroups.has(id))expandedGroups.delete(id);else expandedGroups.add(id);const body=group.nextElementSibling;body.hidden=!expandedGroups.has(id);group.setAttribute('aria-expanded',String(expandedGroups.has(id)));group.querySelector('.side-chevron')?.classList.toggle('expanded',expandedGroups.has(id));return;}
     const page=e.target.closest('[data-jump]');if(page){choosePage(Number(page.dataset.jump));return;}
+    const readingCard=e.target.closest('[data-reading-question]');if(readingCard&&isMain()&&currentId!==Number(readingCard.dataset.readingQuestion)){currentId=Number(readingCard.dataset.readingQuestion);focusReadingQuestion(currentId,false);}
+
     const section=e.target.closest('[data-listening-part]');if(section){chooseListeningPart(Number(section.dataset.listeningPart));return;}
     const control=e.target.closest('[data-action]');if(!control)return;
     const action=control.dataset.action;
     if(action==='next')move(1);else if(action==='prev')move(-1);
+    else if(action==='reading-previous')choosePage(55);else if(action==='reading-next')choosePage(64);
     else if(action==='flag'){flags.has(currentId)?flags.delete(currentId):flags.add(currentId);render();}
     else if(action==='confirm-main')showMainConfirm();
     else if(action==='confirm-listening')finishListening();
@@ -460,6 +553,7 @@ function setupListeners(){
     if(activeAudio===null||!player.duration)return;
     const n=document.getElementById('audio-progress-'+activeAudio);
     if(n)n.style.width=(100*player.currentTime/player.duration)+'%';
+    const elapsed=document.getElementById('audio-elapsed-'+activeAudio);if(elapsed)elapsed.textContent=mmss(player.currentTime*1000);
   });
   player.addEventListener('ended',()=>{activeAudio=null;player.removeAttribute('src');player.load();render();});
   player.addEventListener('pause',()=>{
