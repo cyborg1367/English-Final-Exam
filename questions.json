@@ -1,0 +1,844 @@
+{
+  "questions": [
+    {
+      "id": 1,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "The old part of the city is particularly interesting because visitors can see several buildings that were constructed hundreds of years ago. These buildings are important examples of the city's ______ architecture.",
+      "subsection": "Part 1 · Choose the correct answer",
+      "options": [
+        "amazing",
+        "historic",
+        "traditional",
+        "narrow"
+      ]
+    },
+    {
+      "id": 2,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "We didn't have enough time to visit every place on our list, so our guide suggested that we ______ the National Museum first because it was going to close earlier than usual.",
+      "subsection": "Part 1 · Choose the correct answer",
+      "options": [
+        "head for",
+        "invite over",
+        "get a view",
+        "came"
+      ]
+    },
+    {
+      "id": 3,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "The city is famous for its tall modern buildings, but what makes it especially interesting is the ______ between its old streets and its modern shopping departments.",
+      "subsection": "Part 1 · Choose the correct answer",
+      "options": [
+        "experience",
+        "view",
+        "contrast",
+        "beauty"
+      ]
+    },
+    {
+      "id": 4,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "When we reached the top of the hill, we could see the entire city, including the river, the gardens, and buildings. It was a wonderful place to ______ of the area.",
+      "subsection": "Part 1 · Choose the correct answer",
+      "options": [
+        "take a walking tour",
+        "get a view",
+        "experience",
+        "invite over"
+      ]
+    },
+    {
+      "id": 5,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "Before travelling, read the ______. It provides information about local customs, transportation, accommodation, and important places to visit.",
+      "subsection": "Part 1 · Choose the correct answer",
+      "options": [
+        "report",
+        "travel guide",
+        "schedule",
+        "tourism"
+      ]
+    },
+    {
+      "id": 6,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "The restaurant was extremely crowded, and the waiter was really busy doing his job. We had to wait almost twenty minutes before we were able ______.",
+      "subsection": "Part 1 · Choose the correct answer",
+      "options": [
+        "to order",
+        "to celebrate",
+        "to ate",
+        "to get"
+      ]
+    },
+    {
+      "id": 7,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "Although Sara studied carefully for her driving examination, she became so nervous during the test that she made several mistakes and ______.",
+      "subsection": "Part 1 · Choose the correct answer",
+      "options": [
+        "arrived",
+        "failed",
+        "relaxed",
+        "had an accident"
+      ]
+    },
+    {
+      "id": 8,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "We were planning to have dinner at our apartment on Friday, so we decided to ______ a few friends and cook some traditional food for them.",
+      "subsection": "Part 1 · Choose the correct answer",
+      "options": [
+        "visit",
+        "invite over",
+        "go straight",
+        "take a walking tour"
+      ]
+    },
+    {
+      "id": 9,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "My boss asked me to send the written ______ before the end of the week so that she could read them before the next meeting.",
+      "subsection": "Part 1 · Choose the correct answer",
+      "options": [
+        "errands",
+        "appointments",
+        "reports",
+        "schedule"
+      ]
+    },
+    {
+      "id": 10,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "People from Egypt usually speak ______.",
+      "subsection": "Part 1 · Choose the correct answer",
+      "options": [
+        "Egyptian",
+        "African",
+        "The Middle East",
+        "Arabic"
+      ]
+    },
+    {
+      "id": 11,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "Australia and New Zealand are part of ______.",
+      "subsection": "Part 1 · Choose the correct answer",
+      "options": [
+        "The Caribbean",
+        "Antarctica",
+        "Oceania",
+        "English"
+      ]
+    },
+    {
+      "id": 12,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "People who live in the Great Britain speak ______, they are originally ______.",
+      "subsection": "Part 1 · Choose the correct answer",
+      "options": [
+        "English / British",
+        "British / English",
+        "English / Britainian",
+        "British / Europe"
+      ]
+    },
+    {
+      "id": 13,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "You look tired. Did you have a difficult day at work? — Yes, I had a very busy ______. I had two interviews, and several important meetings.",
+      "subsection": "Part 1 · Choose the correct answer",
+      "options": [
+        "plan",
+        "schedule",
+        "job",
+        "time"
+      ]
+    },
+    {
+      "id": 14,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "Choose the best answer for blank (14) in the passage.",
+      "subsection": "Part 2 · Complete the passage",
+      "options": [
+        "gardens",
+        "watching",
+        "travelling",
+        "sightseeing"
+      ],
+      "hint": "cloze"
+    },
+    {
+      "id": 15,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "Choose the best answer for blank (15) in the passage.",
+      "subsection": "Part 2 · Complete the passage",
+      "options": [
+        "history",
+        "tourist attractions",
+        "events",
+        "palaces"
+      ],
+      "hint": "cloze"
+    },
+    {
+      "id": 16,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "Choose the best answer for blank (16) in the passage.",
+      "subsection": "Part 2 · Complete the passage",
+      "options": [
+        "temples",
+        "skyscrapers",
+        "towers",
+        "roads"
+      ],
+      "hint": "cloze"
+    },
+    {
+      "id": 17,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "Choose the best answer for blank (17) in the passage.",
+      "subsection": "Part 2 · Complete the passage",
+      "options": [
+        "rent a car",
+        "take a walking tour",
+        "got a view",
+        "went straight"
+      ],
+      "hint": "cloze"
+    },
+    {
+      "id": 18,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "Choose the best answer for blank (18) in the passage.",
+      "subsection": "Part 2 · Complete the passage",
+      "options": [
+        "mountain",
+        "chandelier",
+        "river",
+        "jungle"
+      ],
+      "hint": "cloze"
+    },
+    {
+      "id": 19,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "Choose the best answer for blank (19) in the passage.",
+      "subsection": "Part 2 · Complete the passage",
+      "options": [
+        "quite",
+        "exciting",
+        "relax",
+        "quiet"
+      ],
+      "hint": "cloze"
+    },
+    {
+      "id": 20,
+      "section": "vocabulary",
+      "kind": "single",
+      "prompt": "Choose the best answer for blank (20) in the passage.",
+      "subsection": "Part 2 · Complete the passage",
+      "options": [
+        "sunset",
+        "cafe",
+        "building",
+        "place"
+      ],
+      "hint": "cloze"
+    },
+    {
+      "id": 21,
+      "section": "vocabulary",
+      "kind": "select",
+      "prompt": "Although the interview was scheduled for 10 a.m., Mina arrived at the office thirty minutes earlier because she was feeling quite ______ about meeting the company manager for the first time.",
+      "subsection": "Part 3 · Word bank (each word once; two extra)",
+      "options": [
+        "Crazy",
+        "Special",
+        "Nervous",
+        "Meeting",
+        "Appropriate",
+        "vacation",
+        "Chores",
+        "Relaxing"
+      ]
+    },
+    {
+      "id": 22,
+      "section": "vocabulary",
+      "kind": "select",
+      "prompt": "After a particularly stressful week at work, my parents decided to spend the weekend at a small hotel near the mountains, where they could enjoy the peaceful atmosphere and have a ______ holiday.",
+      "subsection": "Part 3 · Word bank (each word once; two extra)",
+      "options": [
+        "Crazy",
+        "Special",
+        "Nervous",
+        "Meeting",
+        "Appropriate",
+        "vacation",
+        "Chores",
+        "Relaxing"
+      ]
+    },
+    {
+      "id": 23,
+      "section": "vocabulary",
+      "kind": "select",
+      "prompt": "Before sending an important email to the university professor, you should make sure that your language is polite and ______ for a formal academic situation.",
+      "subsection": "Part 3 · Word bank (each word once; two extra)",
+      "options": [
+        "Crazy",
+        "Special",
+        "Nervous",
+        "Meeting",
+        "Appropriate",
+        "vacation",
+        "Chores",
+        "Relaxing"
+      ]
+    },
+    {
+      "id": 24,
+      "section": "vocabulary",
+      "kind": "select",
+      "prompt": "My brother usually helps my mother with the household ______, such as washing the dishes, cleaning the kitchen, and taking out the rubbish.",
+      "subsection": "Part 3 · Word bank (each word once; two extra)",
+      "options": [
+        "Crazy",
+        "Special",
+        "Nervous",
+        "Meeting",
+        "Appropriate",
+        "vacation",
+        "Chores",
+        "Relaxing"
+      ]
+    },
+    {
+      "id": 25,
+      "section": "vocabulary",
+      "kind": "select",
+      "prompt": "We have an important ______ with the new project manager tomorrow morning, so everyone needs to arrive on time and bring their reports.",
+      "subsection": "Part 3 · Word bank (each word once; two extra)",
+      "options": [
+        "Crazy",
+        "Special",
+        "Nervous",
+        "Meeting",
+        "Appropriate",
+        "vacation",
+        "Chores",
+        "Relaxing"
+      ]
+    },
+    {
+      "id": 26,
+      "section": "vocabulary",
+      "kind": "select",
+      "prompt": "I couldn't believe how ______ the situation was: Tom accidentally walked into the wrong classroom and started giving a presentation to a group of students who had never seen him before.",
+      "subsection": "Part 3 · Word bank (each word once; two extra)",
+      "options": [
+        "Crazy",
+        "Special",
+        "Nervous",
+        "Meeting",
+        "Appropriate",
+        "vacation",
+        "Chores",
+        "Relaxing"
+      ]
+    },
+    {
+      "id": 27,
+      "section": "vocabulary",
+      "kind": "text",
+      "prompt": "Complete blank (27) in the illustrated menu.",
+      "subsection": "Part 4 · Complete the menu",
+      "hint": "menu"
+    },
+    {
+      "id": 28,
+      "section": "vocabulary",
+      "kind": "text",
+      "prompt": "Complete blank (28) in the illustrated menu.",
+      "subsection": "Part 4 · Complete the menu",
+      "hint": "menu"
+    },
+    {
+      "id": 29,
+      "section": "vocabulary",
+      "kind": "text",
+      "prompt": "Complete blank (29) in the illustrated menu.",
+      "subsection": "Part 4 · Complete the menu",
+      "hint": "menu"
+    },
+    {
+      "id": 30,
+      "section": "vocabulary",
+      "kind": "text",
+      "prompt": "Complete blank (30) in the illustrated menu.",
+      "subsection": "Part 4 · Complete the menu",
+      "hint": "menu"
+    },
+    {
+      "id": 31,
+      "section": "vocabulary",
+      "kind": "text",
+      "prompt": "Complete blank (31) in the illustrated menu.",
+      "subsection": "Part 4 · Complete the menu",
+      "hint": "menu"
+    },
+    {
+      "id": 32,
+      "section": "vocabulary",
+      "kind": "text",
+      "prompt": "Complete blank (32) in the illustrated menu.",
+      "subsection": "Part 4 · Complete the menu",
+      "hint": "menu"
+    },
+    {
+      "id": 33,
+      "section": "vocabulary",
+      "kind": "text",
+      "prompt": "We visited the old garden and the local museum. The most interesting part was the exhibition of traditional m_______ i_______ (2 words) like flute, saxophone, and so on from different regions of the country.",
+      "subsection": "Part 5 · First letters are given"
+    },
+    {
+      "id": 34,
+      "section": "vocabulary",
+      "kind": "text",
+      "prompt": "I was running down the stairs when I accidentally d_______ (1 word) my phone. I tried to pick it up, lost my balance, and fell.",
+      "subsection": "Part 5 · First letters are given"
+    },
+    {
+      "id": 35,
+      "section": "vocabulary",
+      "kind": "text",
+      "prompt": "There are four different countries in the U_______ K_______ such as England, Wales, Scotland, and Northern Ireland.",
+      "subsection": "Part 5 · First letters are given"
+    },
+    {
+      "id": 36,
+      "section": "vocabulary",
+      "kind": "text",
+      "prompt": "In many restaurants, there is always a knife and f_______ on the table for each person.",
+      "subsection": "Part 5 · First letters are given"
+    },
+    {
+      "id": 37,
+      "section": "grammar",
+      "kind": "single",
+      "prompt": "I'm not sure what that building is used for. It ______ be a museum, but I think it's actually a government office.",
+      "subsection": "Part 1 · Choose the best answer",
+      "options": [
+        "can",
+        "can't",
+        "is",
+        "doesn't can"
+      ]
+    },
+    {
+      "id": 38,
+      "section": "grammar",
+      "kind": "single",
+      "prompt": "My brother is very good at languages. He ______ speak three languages fluently, but he ______ understand Japanese.",
+      "subsection": "Part 1 · Choose the best answer",
+      "options": [
+        "can to / can't",
+        "can / doesn't can",
+        "can't / can",
+        "can / can't"
+      ]
+    },
+    {
+      "id": 39,
+      "section": "grammar",
+      "kind": "single",
+      "prompt": "A: What is a Crepe?\nB: It's ______ a pancake that you can eat as a breakfast.",
+      "subsection": "Part 1 · Choose the best answer",
+      "options": [
+        "like kind",
+        "kind of like",
+        "kind of",
+        "can like"
+      ]
+    },
+    {
+      "id": 40,
+      "section": "grammar",
+      "kind": "single",
+      "prompt": "A: ______ you enjoy the walking tour last weekend?\nB: Yes, I ______. It was really interesting.",
+      "subsection": "Part 1 · Choose the best answer",
+      "options": [
+        "Did / did",
+        "Do / did",
+        "Did / enjoyed",
+        "Were / did"
+      ]
+    },
+    {
+      "id": 41,
+      "section": "grammar",
+      "kind": "textarea",
+      "prompt": "My cousin can to play piano and guitar, but she can't read music very well.",
+      "subsection": "Part 2 · Find the mistake and rewrite the whole sentence"
+    },
+    {
+      "id": 42,
+      "section": "grammar",
+      "kind": "textarea",
+      "prompt": "I didn't go sightseeing with my friends because I have too much work to do.",
+      "subsection": "Part 2 · Find the mistake and rewrite the whole sentence"
+    },
+    {
+      "id": 43,
+      "section": "grammar",
+      "kind": "textarea",
+      "prompt": "What did you bought at the shopping mall yesterday? I saw you carrying several bags.",
+      "subsection": "Part 2 · Find the mistake and rewrite the whole sentence"
+    },
+    {
+      "id": 44,
+      "section": "grammar",
+      "kind": "textarea",
+      "prompt": "This traditional dish is kind like a soup, but it has a much thicker texture.",
+      "subsection": "Part 2 · Find the mistake and rewrite the whole sentence"
+    },
+    {
+      "id": 45,
+      "section": "grammar",
+      "kind": "textarea",
+      "prompt": "Did your parents enjoyed the concert? or they thought the music is too loud?",
+      "subsection": "Part 2 · Find the mistake and rewrite the whole sentence"
+    },
+    {
+      "id": 46,
+      "section": "grammar",
+      "kind": "textarea",
+      "prompt": "can / from / you / get / the top / a beautiful view / of / the tower",
+      "subsection": "Part 3 · Put the words in order"
+    },
+    {
+      "id": 47,
+      "section": "grammar",
+      "kind": "textarea",
+      "prompt": "last summer / where / your family / did / travel ?",
+      "subsection": "Part 3 · Put the words in order"
+    },
+    {
+      "id": 48,
+      "section": "grammar",
+      "kind": "textarea",
+      "prompt": "didn't / because / the museum / we / visit / it / was / closed",
+      "subsection": "Part 3 · Put the words in order"
+    },
+    {
+      "id": 49,
+      "section": "grammar",
+      "kind": "textarea",
+      "prompt": "the interviewer / ask / what questions / did / during / the interview / you ?",
+      "subsection": "Part 3 · Put the words in order"
+    },
+    {
+      "id": 50,
+      "section": "grammar",
+      "kind": "text",
+      "prompt": "Why ______ you ______ the driver's test last month? Was it because you were too nervous? (not pass)",
+      "subsection": "Part 4 · Write the correct verb form(s)"
+    },
+    {
+      "id": 51,
+      "section": "grammar",
+      "kind": "text",
+      "prompt": "She ______ (write) three emails before lunch.",
+      "subsection": "Part 4 · Write the correct verb form(s)"
+    },
+    {
+      "id": 52,
+      "section": "grammar",
+      "kind": "text",
+      "prompt": "Where ______ he ______ that jacket? (buy)",
+      "subsection": "Part 4 · Write the correct verb form(s)"
+    },
+    {
+      "id": 53,
+      "section": "grammar",
+      "kind": "text",
+      "prompt": "When I arrived at the station, the train already ______ (leave).",
+      "subsection": "Part 4 · Write the correct verb form(s)"
+    },
+    {
+      "id": 54,
+      "section": "grammar",
+      "kind": "text",
+      "prompt": "My father usually ______ (drink) coffee in the morning, but last week he ______ (drink) tea.",
+      "subsection": "Part 4 · Write the correct verb form(s)"
+    },
+    {
+      "id": 55,
+      "section": "grammar",
+      "kind": "text",
+      "prompt": "He often ______ (walk) to work, but yesterday he ______ (take) bus because it ______ (be) raining.",
+      "subsection": "Part 4 · Write the correct verb form(s)"
+    },
+    {
+      "id": 56,
+      "section": "reading",
+      "kind": "single",
+      "prompt": "More people aged 55 or more use Facebook than people aged 65 or more.",
+      "subsection": "Part 1 · True or False",
+      "options": [
+        "True",
+        "False"
+      ],
+      "hint": "reading"
+    },
+    {
+      "id": 57,
+      "section": "reading",
+      "kind": "single",
+      "prompt": "Sheila’s photos were sent to her grandparent with post when she was a child.",
+      "subsection": "Part 1 · True or False",
+      "options": [
+        "True",
+        "False"
+      ],
+      "hint": "reading"
+    },
+    {
+      "id": 58,
+      "section": "reading",
+      "kind": "single",
+      "prompt": "Grandparents typically use Facebook less than their grandchildren.",
+      "subsection": "Part 1 · True or False",
+      "options": [
+        "True",
+        "False"
+      ],
+      "hint": "reading"
+    },
+    {
+      "id": 59,
+      "section": "reading",
+      "kind": "single",
+      "prompt": "Peter uses an old-style mobile phone during the week and in the morning to spend less time looking at screens and set a good example for his children.",
+      "subsection": "Part 1 · True or False",
+      "options": [
+        "True",
+        "False"
+      ],
+      "hint": "reading"
+    },
+    {
+      "id": 60,
+      "section": "reading",
+      "kind": "single",
+      "prompt": "Peter feels that the changes make him a better parent.",
+      "subsection": "Part 1 · True or False",
+      "options": [
+        "True",
+        "False"
+      ],
+      "hint": "reading"
+    },
+    {
+      "id": 61,
+      "section": "reading",
+      "kind": "text",
+      "prompt": "A routine activity you do almost every day is ______.",
+      "subsection": "Part 2 · Write a word from the text",
+      "hint": "reading"
+    },
+    {
+      "id": 62,
+      "section": "reading",
+      "kind": "text",
+      "prompt": "My son’s kids are my ______.",
+      "subsection": "Part 2 · Write a word from the text",
+      "hint": "reading"
+    },
+    {
+      "id": 63,
+      "section": "reading",
+      "kind": "text",
+      "prompt": "When you spend too much time on your phone, you have an ______ to it.",
+      "subsection": "Part 2 · Write a word from the text",
+      "hint": "reading"
+    },
+    {
+      "id": 64,
+      "section": "writing",
+      "kind": "writing",
+      "prompt": "Think about a day when you had a really awful experience. Explain what exactly happened and what did you do? Write a blog post about your experience. (50–80 words)",
+      "subsection": "Writing · Blog post"
+    },
+    {
+      "id": 65,
+      "section": "listening",
+      "kind": "single",
+      "prompt": "Snakes cannot hear.",
+      "subsection": "Part 1 · Listen and mark True or False",
+      "options": [
+        "True",
+        "False"
+      ],
+      "hint": "audio1"
+    },
+    {
+      "id": 66,
+      "section": "listening",
+      "kind": "single",
+      "prompt": "Snakes lay eggs.",
+      "subsection": "Part 1 · Listen and mark True or False",
+      "options": [
+        "True",
+        "False"
+      ],
+      "hint": "audio1"
+    },
+    {
+      "id": 67,
+      "section": "listening",
+      "kind": "single",
+      "prompt": "Sea lions live in small groups.",
+      "subsection": "Part 1 · Listen and mark True or False",
+      "options": [
+        "True",
+        "False"
+      ],
+      "hint": "audio1"
+    },
+    {
+      "id": 68,
+      "section": "listening",
+      "kind": "single",
+      "prompt": "Penguins’ eggs are black.",
+      "subsection": "Part 1 · Listen and mark True or False",
+      "options": [
+        "True",
+        "False"
+      ],
+      "hint": "audio1"
+    },
+    {
+      "id": 69,
+      "section": "listening",
+      "kind": "single",
+      "prompt": "Penguins can be under the water for 18 minutes.",
+      "subsection": "Part 1 · Listen and mark True or False",
+      "options": [
+        "True",
+        "False"
+      ],
+      "hint": "audio1"
+    },
+    {
+      "id": 70,
+      "section": "listening",
+      "kind": "select",
+      "prompt": "Speaker A — choose the celebration.",
+      "subsection": "Part 2 · Match speakers with celebrations",
+      "options": [
+        "a. golden wedding anniversary",
+        "b. Notting Hill Carnival",
+        "c. end of term party at school",
+        "d. Royal wedding",
+        "e. surprise birthday party"
+      ],
+      "hint": "audio2"
+    },
+    {
+      "id": 71,
+      "section": "listening",
+      "kind": "select",
+      "prompt": "Speaker B — choose the celebration.",
+      "subsection": "Part 2 · Match speakers with celebrations",
+      "options": [
+        "a. golden wedding anniversary",
+        "b. Notting Hill Carnival",
+        "c. end of term party at school",
+        "d. Royal wedding",
+        "e. surprise birthday party"
+      ],
+      "hint": "audio2"
+    },
+    {
+      "id": 72,
+      "section": "listening",
+      "kind": "select",
+      "prompt": "Speaker C — choose the celebration.",
+      "subsection": "Part 2 · Match speakers with celebrations",
+      "options": [
+        "a. golden wedding anniversary",
+        "b. Notting Hill Carnival",
+        "c. end of term party at school",
+        "d. Royal wedding",
+        "e. surprise birthday party"
+      ],
+      "hint": "audio2"
+    },
+    {
+      "id": 73,
+      "section": "listening",
+      "kind": "select",
+      "prompt": "Speaker D — choose the celebration.",
+      "subsection": "Part 2 · Match speakers with celebrations",
+      "options": [
+        "a. golden wedding anniversary",
+        "b. Notting Hill Carnival",
+        "c. end of term party at school",
+        "d. Royal wedding",
+        "e. surprise birthday party"
+      ],
+      "hint": "audio2"
+    },
+    {
+      "id": 74,
+      "section": "listening",
+      "kind": "select",
+      "prompt": "Speaker E — choose the celebration.",
+      "subsection": "Part 2 · Match speakers with celebrations",
+      "options": [
+        "a. golden wedding anniversary",
+        "b. Notting Hill Carnival",
+        "c. end of term party at school",
+        "d. Royal wedding",
+        "e. surprise birthday party"
+      ],
+      "hint": "audio2"
+    }
+  ],
+  "cloze": "Travelling is not only an opportunity to relax and enjoy beautiful places; it can also help people understand the history and culture of different societies. When tourists visit a new city, they often begin with (14) ______ its main places, landscapes and exploring (15) ______, such as museums, historical buildings, and public squares. Some cities are especially famous for their ancient (16) ______, where religious ceremonies and cultural events have taken place for centuries. Others attract visitors with their modern architecture, including enormous buildings and impressive structures. One interesting way to explore a city is to (17) ______ through its older neighbourhoods. This allows visitors to discover small streets, traditional shops, and buildings that they might not notice when travelling by bus or car. In some places, tourists can also use a boat to travel across a (18) ______ or reach an area that is difficult to access by road. At the end of the day, many visitors prefer to find a (19) ______ place near the water, where they can watch the (20) ______ and enjoy the peaceful atmosphere before returning to their hotel.",
+  "reading": "Today’s grandparents are joining their grandchildren on social media, but the different generations’ online habits couldn’t be more different. In the UK, the over-55s are joining Facebook in increasing numbers, meaning that they will soon be the site’s second biggest user group, with 3.5 million users aged 55–64 and 2.9 million over-65s.\n\nSheila, aged 59, says, ‘I joined to see what my grandchildren are doing, as my daughter posts videos and photos of them. It’s a much better way to see what they’re doing than waiting for letters and photos in the post. That’s how we did it when I was a child, but I think I’m lucky I get to see so much more of their lives than my grandparents did.’ Ironically, Sheila’s grandchildren are less likely to use Facebook themselves. Children under 17 in the UK are leaving the site – only 2.2 million users are under 17 – but they’re not going far from their smartphones. Chloe, aged 15, even sleeps with her phone. ‘It’s my alarm clock so I have to,’ she says. ‘I look at it before I go to sleep and as soon as I wake up.’ Unlike her grandmother’s generation, Chloe’s age group is spending so much time on their phones at home that they are missing out on spending time with their friends in real life.\n\nSheila, on the other hand, has made contact with old friends from school she hasn’t heard from in forty years. ‘We use Facebook to arrange to meet all over the country,’ she says. ‘It’s changed my social life completely.’ Teenagers might have their parents to thank for their smartphone and social media addiction as their parents were the early adopters of the smartphone. Peter, 38 and father of two teenagers, reports that he used to be on his phone or laptop constantly. ‘I was always connected and I felt like I was always working,’ he says. ‘How could I tell my kids to get off their phones if I was always in front of a screen myself?’ So, in the evenings and at weekends, he takes his SIM card out of his smartphone and puts it into an old-style mobile phone that can only make calls and send text messages. ‘I’m not completely cut off from the world in case of emergencies, but the important thing is I’m setting a better example to my kids and spending more quality time with them.’\n\nIs it only a matter of time until the generation above and below Peter catches up with the new trend for a less digital life?",
+  "wordBank": [
+    "Crazy",
+    "Special",
+    "Nervous",
+    "Meeting",
+    "Appropriate",
+    "vacation",
+    "Chores",
+    "Relaxing"
+  ]
+}
